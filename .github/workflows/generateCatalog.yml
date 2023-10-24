@@ -29,7 +29,7 @@ jobs:
       id: all-tags
       run: |
         RELEASE_TAGS=($(git for-each-ref --format '%(refname:short)' refs/tags))
-        echo "tags=$RELEASE_TAGS[*]" >> "$GITHUB_OUTPUT"
+        echo "tags=$RELEASE_TAGS" >> "$GITHUB_OUTPUT"
     
     - name: Create or Update JSON
       run: |
