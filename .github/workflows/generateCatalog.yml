@@ -22,14 +22,14 @@ jobs:
           echo "No tags found in the repository."
           exit 1
         fi
-        echo "tag:=$LATEST_RELEASE_TAG" >> "$GITHUB_OUTPUT"
+        echo "tag=$LATEST_RELEASE_TAG" >> "$GITHUB_OUTPUT"
 
       # echo "{name}={value}" >> $GITHUB_OUTPUT
     - name: Get All Release Tags
       id: all-tags
       run: |
         RELEASE_TAGS=($(git for-each-ref --format '%(refname:short)' refs/tags))
-        echo "tags:=$RELEASE_TAGS[*]" >> "$GITHUB_OUTPUT"
+        echo "tags=$RELEASE_TAGS[*]" >> "$GITHUB_OUTPUT"
     
     - name: Create or Update JSON
       run: |
