@@ -11,14 +11,6 @@ jobs:
     - name: Check out code
       uses: actions/checkout@v2
 
-    - name: Set up Node.js
-      uses: actions/setup-node@v2
-      with:
-        node-version: 14
-
-    - name: Install project dependencies
-      run: npm install
-
     - name: Generate Catalog JSON
       id: generate-catalog
       run: |
