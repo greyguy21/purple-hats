@@ -2,18 +2,33 @@ name: Generate Catalog JSON
 
 on:
   workflow_dispatch:
-    inputs: 
-      tags: 
-        required: true
-        type: string
 
 jobs:
   generate-catalog:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Print tag 
-        run: echo ${{ inputs.tags }}
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Get Latest Release Tag
+        id: latest-tag
+        run: |
+          LATEST_RELEASE_TAG=$(git describe --tags $(git rev-list --tags --max-count=1))
+          echo "::set-output name=tag::$LATEST_RELEASE_TAG"
+          
+      - name: Write to JSON
+        run: |
+          echo '{"latest_release": "'${{ steps.latest-tag.outputs.tag }}'"}' > latest-release.json
+  
+      - name: Commit and Push
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add latest-release.json
+          git commit -m "Update latest release tag"
+          git push
+      
     # - name: Check out code
     #   uses: actions/checkout@v2
 
