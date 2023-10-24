@@ -1,0 +1,55 @@
+name: Generate Catalog JSON
+
+on:
+  workflow_dispatch:
+    tags:
+      - '*'
+
+jobs:
+  generate-catalog:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Check out code
+      uses: actions/checkout@v2
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: 14
+
+    - name: Install project dependencies
+      run: npm install
+
+    - name: Generate Catalog JSON
+      id: generate-catalog
+      run: |
+        # Get the latest release tag
+        LATEST_RELEASE_TAG=$(git describe --tags $(git rev-list --tags --max-count=1))
+
+        # Get all release tags as an array
+        RELEASE_TAGS=($(git for-each-ref --format '%(refname:short)' refs/tags))
+
+        # Filter frontend release tags (customize to match your tags)
+        FRONTEND_RELEASE_TAGS=($(git for-each-ref --format '%(refname:short)' refs/tags | grep 'frontend/' | sort -V | tail -n 1))
+
+        # Generate catalog JSON
+        cat > catalog.json <<EOL
+        {
+          "latest_release": "$LATEST_RELEASE_TAG",
+          "all_release_tags": $(printf '%s\n' "${RELEASE_TAGS[@]}" | jq -R . | jq -s .),
+          "latest_frontend_release": "$FRONTEND_RELEASE_TAGS"
+        }
+        EOL
+        echo "Generated catalog.json"
+      shell: bash
+
+    - name: Commit and push changes
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add catalog.json
+        git commit -m "Generate catalog.json"
+        git push
+      if: success()
+
