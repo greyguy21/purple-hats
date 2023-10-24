@@ -29,15 +29,14 @@ jobs:
       run: |
         RELEASE_TAGS=($(git for-each-ref --format '%(refname:short)' refs/tags))
         echo $RELEASE_TAGS
-        JSON_ARRAY=$(echo "$RELEASE_TAGS" | jq -R -n '[split(" ")[]] | join(",")')
-        echo "::set-output name=tags::${JSON_ARRAY}"
+        echo "::set-output name=tags::${RELEASE_TAGS[*]}"
     
     - name: Create or Update JSON
       run: |
         if [ -e "latest-release.json" ]; then
           # File exists, update it
           EXISTING_JSON="$(cat latest-release.json)"
-          UPDATED_JSON=$(jq --arg latest_release "${{ steps.latest-tag.outputs.tag }}" --argjson all_tags "[\"${{ steps.all-tags.outputs.tags }}\"]" .latest_release = $latest_release | .all_release_tags = $all_tags' <<< "$EXISTING_JSON")
+          UPDATED_JSON=$(jq --arg latest_release "${{ steps.latest-tag.outputs.tag }}" --argjson all_tags "${{ steps.all-tags.outputs.tags }}" '.latest_release = $latest_release | .all_release_tags = $all_tags' <<< "$EXISTING_JSON")
           echo "$UPDATED_JSON" > latest-release.json
         else
           # File does not exist, create it
