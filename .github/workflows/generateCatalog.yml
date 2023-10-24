@@ -51,6 +51,7 @@ jobs:
       run: |
         git config user.name "GitHub Actions"
         git config user.email "actions@github.com"
+        git pull
         git add latest-release.json
         git commit -m "Update latest release tags"
         git push
