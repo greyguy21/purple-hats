@@ -1,43 +1,51 @@
-name: Generate Catalog JSON
+name: Update Latest Release Tag and All Release Tags
 
 on:
-  workflow_dispatch:
+  workflow_dispatch: # This event allows manual triggering of the workflow
 
 jobs:
-  generate-catalog:
+  update-release-tags:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Check out code
-        uses: actions/checkout@v2
-  
-      - name: Generate Catalog JSON
-        id: generate-catalog
-        run: |
-          git fetch --tags
-          
-          # Get the latest release tag
-          LATEST_RELEASE_TAG=$(git describe --tags $(git rev-list --tags --max-count=1))
-  
-          # Get all release tags as an array
-          RELEASE_TAGS=($(git for-each-ref --format '%(refname:short)' refs/tags))
-  
-          # Generate catalog JSON
-          cat > catalog.json <<EOL
-          {
-            "latest_release": "$LATEST_RELEASE_TAG",
-            "all_release_tags": $(printf '%s\n' "${RELEASE_TAGS[@]}" | jq -R . | jq -s .),
-          }
-          EOL
-          echo "Generated catalog.json"
-        shell: bash
-  
-      - name: Commit and push changes
-        run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          git add catalog.json
-          git commit -m "Generate catalog.json"
-          git push
-        if: success()
-  
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Fetch Tags
+      run: git fetch --tags
+
+    - name: Get Latest Release Tag
+      id: latest-tag
+      run: |
+        LATEST_RELEASE_TAG=$(git describe --tags $(git rev-list --tags --max-count=1))
+        if [ -z "$LATEST_RELEASE_TAG" ]; then
+          echo "No tags found in the repository."
+          exit 1
+        fi
+        echo "::set-output name=tag::$LATEST_RELEASE_TAG"
+        
+    - name: Get All Release Tags
+      id: all-tags
+      run: |
+        RELEASE_TAGS=($(git for-each-ref --format '%(refname:short)' refs/tags))
+        echo "::set-output name=tags::${RELEASE_TAGS[*]}"
+    
+    - name: Create or Update JSON
+      run: |
+        if [ -e "latest-release.json" ]; then
+          # File exists, update it
+          EXISTING_JSON="$(cat latest-release.json)"
+          UPDATED_JSON=$(jq --arg latest_release "${{ steps.latest-tag.outputs.tag }}" --argjson all_tags "${{ steps.all-tags.outputs.tags }}" '.latest_release = $latest_release | .all_release_tags = $all_tags' <<< "$EXISTING_JSON")
+          echo "$UPDATED_JSON" > latest-release.json
+        else
+          # File does not exist, create it
+          echo '{"latest_release": "'${{ steps.latest-tag.outputs.tag }}'", "all_release_tags": ['"${{ steps.all-tags.outputs.tags }}"]}' > latest-release.json
+        fi
+
+    - name: Commit and Push
+      run: |
+        git config user.name "GitHub Actions"
+        git config user.email "actions@github.com"
+        git add latest-release.json
+        git commit -m "Update latest release tags"
+        git push
