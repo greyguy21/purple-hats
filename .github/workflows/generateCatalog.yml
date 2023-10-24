@@ -39,7 +39,7 @@ jobs:
           echo "$UPDATED_JSON" > latest-release.json
         else
           # File does not exist, create it
-          echo '{"latest_release": "'${{ steps.latest-tag.outputs.tag }}'", "all_release_tags": ['"${{ steps.all-tags.outputs.tags }}"]}' > latest-release.json
+          echo '{"latest_release": "'${{ steps.latest-tag.outputs.tag }}'", "all_release_tags": ['"${{ steps.all-tags.outputs.tags }}"']}' > latest-release.json
         fi
 
     - name: Commit and Push
