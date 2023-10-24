@@ -2,9 +2,9 @@ name: Build Run and Test Docker Container
 
 on:
   workflow_dispatch:
-  push:
-    tags:
-      - '*.*.*'
+  # push:
+  #   tags:
+  #     - '*.*.*'
 
 jobs:
   build:
