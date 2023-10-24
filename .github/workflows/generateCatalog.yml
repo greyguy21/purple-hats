@@ -8,56 +8,36 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: Check out code
         uses: actions/checkout@v2
-
-      - name: Get Latest Release Tag
-        id: latest-tag
+  
+      - name: Generate Catalog JSON
+        id: generate-catalog
         run: |
           git fetch --tags
-          LATEST_RELEASE_TAG=$(git describe --tags $(git rev-list --tags --max-count=1))
-          echo "::set-output name=tag::$LATEST_RELEASE_TAG"
           
-      - name: Write to JSON
-        run: |
-          echo '{"latest_release": "'${{ steps.latest-tag.outputs.tag }}'"}' > latest-release.json
+          # Get the latest release tag
+          LATEST_RELEASE_TAG=$(git describe --tags $(git rev-list --tags --max-count=1))
   
-      - name: Commit and Push
+          # Get all release tags as an array
+          RELEASE_TAGS=($(git for-each-ref --format '%(refname:short)' refs/tags))
+  
+          # Generate catalog JSON
+          cat > catalog.json <<EOL
+          {
+            "latest_release": "$LATEST_RELEASE_TAG",
+            "all_release_tags": $(printf '%s\n' "${RELEASE_TAGS[@]}" | jq -R . | jq -s .),
+          }
+          EOL
+          echo "Generated catalog.json"
+        shell: bash
+  
+      - name: Commit and push changes
         run: |
-          git config user.name "GitHub Actions"
-          git config user.email "actions@github.com"
-          git add latest-release.json
-          git commit -m "Update latest release tag"
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add catalog.json
+          git commit -m "Generate catalog.json"
           git push
-      
-    # - name: Check out code
-    #   uses: actions/checkout@v2
-
-    # - name: Generate Catalog JSON
-    #   id: generate-catalog
-    #   run: |
-    #     # Get the latest release tag
-    #     LATEST_RELEASE_TAG=$(git describe --tags $(git rev-list --tags --max-count=1))
-
-    #     # Get all release tags as an array
-    #     RELEASE_TAGS=($(git for-each-ref --format '%(refname:short)' refs/tags))
-
-    #     # Generate catalog JSON
-    #     cat > catalog.json <<EOL
-    #     {
-    #       "latest_release": "$LATEST_RELEASE_TAG",
-    #       "all_release_tags": $(printf '%s\n' "${RELEASE_TAGS[@]}" | jq -R . | jq -s .),
-    #     }
-    #     EOL
-    #     echo "Generated catalog.json"
-    #   shell: bash
-
-    # - name: Commit and push changes
-    #   run: |
-    #     git config --local user.email "action@github.com"
-    #     git config --local user.name "GitHub Action"
-    #     git add catalog.json
-    #     git commit -m "Generate catalog.json"
-    #     git push
-    #   if: success()
-
+        if: success()
+  
