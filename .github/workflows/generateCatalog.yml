@@ -29,8 +29,8 @@ jobs:
       id: all-tags
       run: |
         RELEASE_TAGS=($(git for-each-ref --format '%(refname:short)' refs/tags))
-        echo $RELEASE_TAGS
-        echo "tags=$RELEASE_TAGS" >> "$GITHUB_OUTPUT"
+        echo ${RELEASE_TAGS[*]}
+        echo "tags=${RELEASE_TAGS[*]}" >> "$GITHUB_OUTPUT"
     
     - name: Create or Update JSON
       run: |
