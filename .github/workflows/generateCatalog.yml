@@ -14,6 +14,7 @@ jobs:
       - name: Get Latest Release Tag
         id: latest-tag
         run: |
+          git fetch --tags
           LATEST_RELEASE_TAG=$(git describe --tags $(git rev-list --tags --max-count=1))
           echo "::set-output name=tag::$LATEST_RELEASE_TAG"
           
