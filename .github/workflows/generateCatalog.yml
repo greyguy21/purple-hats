@@ -2,8 +2,6 @@ name: Generate Catalog JSON
 
 on:
   workflow_dispatch:
-    tags:
-      - '*'
 
 jobs:
   generate-catalog:
