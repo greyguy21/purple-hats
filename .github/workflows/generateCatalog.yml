@@ -27,7 +27,7 @@ jobs:
     - name: Get All Release Tags
       id: all-tags
       run: |
-        RELEASE_TAGS=($(git for-each-ref --format '%(refname:short)' refs/tags) | tr ' ' ',')
+        RELEASE_TAGS=($(git for-each-ref --format '%(refname:short)' refs/tags  | tr ' ' ','))
         echo "::set-output name=tags::${RELEASE_TAGS[*]}"
     
     - name: Create or Update JSON
