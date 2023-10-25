@@ -13,8 +13,8 @@ jobs:
 
     - name: Get release data
       run: |
-        LATEST_RELEASE=$(curl -s "https://api.github.com/repos/${{ github.repository }}/releases/latest")
-        ALL_RELEASES=$(curl -s "https://api.github.com/repos/${{ github.repository }}/releases")
+        LATEST_RELEASE=$(curl -s "https://api.github.com/repos/GovTechSG/purple-hats/releases/latest")
+        ALL_RELEASES=$(curl -s "https://api.github.com/repos/GovTechSG/purple-hats/releases")
         LATEST_FE_RELEASE=$(curl -s "https://api.github.com/repos/GovTechSG/purple-hats-desktop/releases/latest")
         
         # Extract the latest release and pre-release tags
