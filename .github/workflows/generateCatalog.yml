@@ -19,7 +19,7 @@ jobs:
         
         # Extract the latest release and pre-release tags
         LATEST_RELEASE_TAG=$(echo "$LATEST_RELEASE" | jq -r '.tag_name')
-        LATEST_PRE_RELEASE_TAG=$(echo "$ALL_RELEASES" | jq -r '.[] | select(.prerelease) | .tag_name')
+                LATEST_PRE_RELEASE_TAG=$(echo "$ALL_RELEASES" | jq -r '[.[] | select(.prerelease) | .tag_name] | first')
         LATEST_FE_RELEASE_TAG=$(echo "$LATEST_FE_RELEASE" | jq -r '.tag_name')
         
         # Extract all release and pre-release tags as comma-separated strings
