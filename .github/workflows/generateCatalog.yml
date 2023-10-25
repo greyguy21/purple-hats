@@ -15,12 +15,14 @@ jobs:
       run: |
         LATEST_RELEASE=$(curl -s "https://api.github.com/repos/${{ github.repository }}/releases/latest")
         ALL_RELEASES=$(curl -s "https://api.github.com/repos/${{ github.repository }}/releases")
+        LATEST_FE_RELEASE=$(curl -s "https://api.github.com/repos/GovTechSG/purple-hats-desktop/releases/latest")
         
         # Extract the latest release and pre-release tags
         LATEST_RELEASE_TAG=$(echo "$LATEST_RELEASE" | jq -r '.tag_name')
         LATEST_PRE_RELEASE_TAG=$(echo "$ALL_RELEASES" | jq -r '.[] | select(.prerelease) | .tag_name')
+        LATEST_FE_RELEASE_TAG=$(echo "$LATEST_FE_RELEASE" | jq -r '.tag_name')
         
-               # Extract all release and pre-release tags as comma-separated strings
+        # Extract all release and pre-release tags as comma-separated strings
         ALL_RELEASE_TAGS=$(echo "$ALL_RELEASES" | jq -r '[.[] | select(.prerelease | not) | .tag_name] | join(",")')
         ALL_PRE_RELEASE_TAGS=$(echo "$ALL_RELEASES" | jq -r '[.[] | select(.prerelease) | .tag_name] | join(",")')
         
@@ -28,6 +30,7 @@ jobs:
         echo "{
           \"latestRelease\": \"$LATEST_RELEASE_TAG\",
           \"latestPreRelease\": \"$LATEST_PRE_RELEASE_TAG\",
+          \"latestFrontendRelease\": \"$LATEST_FE_RELEASE_TAG\",
           \"allReleaseTags\": [$ALL_RELEASE_TAGS],
           \"allPreReleaseTags\": [$ALL_PRE_RELEASE_TAGS]
         }" > latest-release.json
