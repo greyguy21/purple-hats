@@ -1,9 +1,7 @@
 name: Generate Latest Release JSON
 
 on:
-  push:
-    tags:
-      - '*'
+  workflow_dispatch:
 
 jobs:
   generate_latest_release_json:
@@ -38,3 +36,12 @@ jobs:
 
     - name: Show generated JSON
       run: cat latest-release.json
+
+    - name: Commit JSON file
+      run: |
+        git config --global user.email "github-actions@github.com"
+        git config --global user.name "GitHub Actions"
+
+        git add latest-release.json
+        git commit -m "Update latest-release.json"
+        git push
