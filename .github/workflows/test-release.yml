@@ -9,8 +9,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Runs on Pre-Release
-      if: 'github.event.prerelease'
+      if: 'github.event.release.prerelease'
       run: echo "This is a Pre-Release"
     - name: Runs on Release
-      if: '!github.event.prerelease'
+      if: '!github.event.release.prerelease'
       run: echo "This is a Release"
