@@ -1,131 +1,40 @@
 name: Generate Latest Release JSON
 
 on:
-  workflow_dispatch:  # Customize this to match your main branch
+  push:
+    tags:
+      - '*'
 
 jobs:
-  generate_release_json:
+  generate_latest_release_json:
     runs-on: ubuntu-latest
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
 
-    - name: Set up Node.js
-      uses: actions/setup-node@v2
-      with:
-        node-version: 14
-
-    - name: Install dependencies
-      run: npm install
-
-    - name: Generate Release JSON
-      id: generate-json
+    - name: Get release data
       run: |
-        # Fetch the latest release via GitHub API
-        latest_release=$(curl -s "https://api.github.com/repos/${{ github.repository }}/releases/latest")
+        LATEST_RELEASE=$(curl -s "https://api.github.com/repos/${{ github.repository }}/releases/latest")
+        ALL_RELEASES=$(curl -s "https://api.github.com/repos/${{ github.repository }}/releases")
+        
+        # Extract the latest release and pre-release tags
+        LATEST_RELEASE_TAG=$(echo "$LATEST_RELEASE" | jq -r '.tag_name')
+        LATEST_PRE_RELEASE_TAG=$(echo "$ALL_RELEASES" | jq -r '.[] | select(.prerelease) | .tag_name')
+        
+        # Extract all release and pre-release tags
+        ALL_RELEASE_TAGS=$(echo "$ALL_RELEASES" | jq -r '.[] | select(.prerelease | not) | .tag_name')
+        ALL_PRE_RELEASE_TAGS=$(echo "$ALL_RELEASES" | jq -r '.[] | select(.prerelease) | .tag_name')
+        
+        # Create the JSON file
+        echo "{
+          \"latestRelease\": \"$LATEST_RELEASE_TAG\",
+          \"latestPreRelease\": \"$LATEST_PRE_RELEASE_TAG\",
+          \"allReleaseTags\": [$ALL_RELEASE_TAGS],
+          \"allPreReleaseTags\": [$ALL_PRE_RELEASE_TAGS]
+        }" > latest-release.json
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-        # Fetch all releases via GitHub API
-        all_releases=$(curl -s "https://api.github.com/repos/${{ github.repository }}/releases")
-
-        # Extract the latest pre-release from all releases
-        latest_pre_release=$(echo "$all_releases" | jq '.[] | select(.prerelease) | select(.published_at >= $latest_release.published_at)')
-
-        # Extract all pre-releases from all releases
-        all_pre_releases=$(echo "$all_releases" | jq '.[] | select(.prerelease)')
-
-        # Create a JSON structure with the desired information
-        release_json='{
-          "latest_release": '$latest_release',
-          "latest_pre_release": '$latest_pre_release',
-          "all_release_tags": ['$all_releases | .[].tag_name | @sh'],
-          "all_pre_release_tags": ['$all_pre_releases | .[].tag_name | @sh']
-        }'
-
-        # Save the JSON structure to a file
-        echo "$release_json" > release-info.json
-
-        echo ::set-output name=release_json::"$release_json"
-
-    - name: Save JSON as an artifact
-      uses: actions/upload-artifact@v2
-      with:
-        name: release-info
-        path: release-info.json
-
-    - name: Display JSON
-      run: |
-        cat release-info.json
-
-    - name: Publish JSON to GitHub Pages
-      uses: actions/checkout@v2
-      with:
-        ref: main  # Customize this to match your main branch
-
-    - name: Publish JSON to GitHub Pages
-      run: |
-        echo "$release_json" > $GITHUB_WORKSPACE/release-info.json
-        git config user.email "actions@github.com"
-        git config user.name "GitHub Actions"
-        git add $GITHUB_WORKSPACE/release-info.json
-        git commit -m "Update release-info.json"
-        git push
-
-
-# name: Update Latest Release Tag and All Release Tags
-
-# on:
-#   workflow_dispatch: # This event allows manual triggering of the workflow
-
-# jobs:
-#   update-release-tags:
-#     runs-on: ubuntu-latest
-
-#     steps:
-#     - name: Checkout code
-#       uses: actions/checkout@v2
-
-#     - name: Fetch Tags
-#       run: git fetch --tags
-
-#     - name: Get Latest Release Tag
-#       id: latest-tag
-#       run: |
-#         LATEST_RELEASE_TAG=$(git describe --tags $(git rev-list --tags --max-count=1))
-#         if [ -z "$LATEST_RELEASE_TAG" ]; then
-#           echo "No tags found in the repository."
-#           exit 1
-#         fi
-#         echo "tag=$LATEST_RELEASE_TAG" >> "$GITHUB_OUTPUT"
-
-#       # echo "{name}={value}" >> $GITHUB_OUTPUT
-#     - name: Get All Release Tags
-#       id: all-tags
-#       run: |
-#         RELEASE_TAGS=($(git for-each-ref --format '%(refname:short)' refs/tags))
-#         echo ${RELEASE_TAGS[*]}
-#         echo "tags=${RELEASE_TAGS[*]}" >> "$GITHUB_OUTPUT"
-    
-#     - name: Create or Update JSON
-#       run: |
-#         ALL_TAGS="[\"${{ steps.all-tags.outputs.tags }}\"]"
-#         echo '{"latest_release": "'${{ steps.latest-tag.outputs.tag }}'", "all_release_tags": '"$ALL_TAGS"'}' > latest-release.json
-#         # if [ -e "latest-release.json" ]; then
-#         #   # File exists, update it
-#         #   EXISTING_JSON="$(cat latest-release.json)"
-#         #   UPDATED_JSON=$(jq --arg latest_release "${{ steps.latest-tag.outputs.tag }}" --argjson all_release_tags "[${{ steps.all-tags.outputs.tags }}]" '.latest_release = $latest_release | .all_release_tags = $all_tags' <<< "$EXISTING_JSON")
-#         #   echo "$UPDATED_JSON" > latest-release.json
-#         # else
-#         #   # File does not exist, create it
-#         #   # Format all_tags as an array
-#         #   ALL_TAGS="[\"${{ steps.all-tags.outputs.tags }}\"]"
-#         #   echo '{"latest_release": "'${{ steps.latest-tag.outputs.tag }}'", "all_release_tags": '"$ALL_TAGS"'}' > latest-release.json
-#         # fi
-
-#     - name: Commit and Push
-#       run: |
-#         git config --local user.name "GitHub Actions"
-#         git config --local user.email "actions@github.com"
-#         git add .
-#         git commit -m "Update latest release tags"
-#         git push
+    - name: Show generated JSON
+      run: cat latest-release.json
